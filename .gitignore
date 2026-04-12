@@ -1,0 +1,20 @@
+# Private config (contains instance IDs, mesh IPs, etc.)
+agent-env.sh
+
+# SSH keys
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*~
+
+# Python
+__pycache__/
+*.pyc
+.venv/
