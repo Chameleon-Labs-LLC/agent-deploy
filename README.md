@@ -14,9 +14,28 @@ Run [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex CLI](h
 
 ## Quick Start
 
+```bash
+git clone https://github.com/Chameleon-Labs-LLC/agent-deploy.git
+cd agent-deploy
+
+# Interactive setup — checks deps, detects your mesh VPN, creates agent-env.sh
+just setup          # or: scripts/agent-setup.sh
+
+# Follow the guide to launch your EC2 instance
+# Then use the ops shortcuts:
+just start          # start the instance
+just ssh            # SSH over mesh
+just health         # remote health check
+just status         # instance state + mesh reachability
+```
+
+Or do it manually:
+
 1. **Read the guide:** [`docs/agent-ec2-setup.md`](docs/agent-ec2-setup.md) — step-by-step, from zero to running agents.
 2. **Create your private config:** Copy `agent-env.example.sh` to `agent-env.sh`, fill in your instance IDs and mesh IPs.
 3. **Run the scripts:** `scripts/` has ops wrappers for start, stop, SSH, health checks, snapshots, cost tracking, and secrets sync.
+
+> **Requires:** [just](https://github.com/casey/just#installation) (optional — you can run the scripts directly)
 
 ## What You Get
 
@@ -31,24 +50,28 @@ Run [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex CLI](h
 | **Config sync** | Git bare repo syncs your `~/.claude/` (or any dotfiles) across machines |
 | **Secrets** | API keys in `~/.config/agent-secrets/`, never on the command line |
 
-## Scripts
+## Scripts & Just Recipes
 
-Every script sources `_agent-env.sh` for defaults. All values are overridable via environment variables.
+Every script sources `_agent-env.sh` for defaults. All values are overridable via environment variables. A [`justfile`](justfile) provides shortcuts for common operations.
 
-| Script | Purpose |
-|---|---|
-| `agent-ssh.sh` | SSH over mesh. `--bootstrap` for initial setup. |
-| `agent-ssm.sh` | Break-glass shell via AWS SSM Session Manager. |
-| `agent-status.sh` | EC2 state, public IP, mesh reachability. `--probe` for uptime. |
-| `agent-start.sh` | Idempotent start. Waits for `running`. |
-| `agent-stop.sh` | Interactive stop. `--yes` to skip prompt. |
-| `agent-health.sh` | Remote health: uptime, memory, disk, agent services, journal. |
-| `agent-logs.sh` | Tail a journald unit over mesh. |
-| `agent-snapshot.sh` | On-demand EBS snapshot with tags. |
-| `agent-snapshot-list.sh` | List tagged snapshots with age. |
-| `agent-secrets-sync.sh` | Push API keys from your vault to the instance (stdin, never argv). |
-| `agent-cost.sh` | Month-to-date AWS spend via Cost Explorer. |
-| `agent-ip.sh` | Print the current public IP (if any). |
+| Just recipe | Script | Purpose |
+|---|---|---|
+| `just setup` | `agent-setup.sh` | Interactive wizard — checks deps, detects mesh VPN, creates `agent-env.sh` |
+| `just ssh` | `agent-ssh.sh` | SSH over mesh. `--bootstrap` for initial setup. |
+| `just ssm` | `agent-ssm.sh` | Break-glass shell via AWS SSM Session Manager. |
+| `just status` | `agent-status.sh` | EC2 state, public IP, mesh reachability. |
+| `just probe` | `agent-status.sh --probe` | Status + remote uptime check. |
+| `just start` | `agent-start.sh` | Idempotent start. Waits for `running`. |
+| `just stop` | `agent-stop.sh` | Interactive stop. `--yes` to skip prompt. |
+| `just health` | `agent-health.sh` | Remote health: uptime, memory, disk, agent services, journal. |
+| `just logs` | `agent-logs.sh` | Tail a journald unit over mesh. |
+| `just snapshot` | `agent-snapshot.sh` | On-demand EBS snapshot with tags. |
+| `just snapshots` | `agent-snapshot-list.sh` | List tagged snapshots with age. |
+| `just secrets-sync` | `agent-secrets-sync.sh` | Push API keys from vault to instance (stdin, never argv). |
+| `just cost` | `agent-cost.sh` | Month-to-date AWS spend via Cost Explorer. |
+| `just ip` | `agent-ip.sh` | Print the current public IP (if any). |
+| `just verify` | — | Start + probe + health in one shot. |
+| `just run <cmd>` | — | Run any command on the instance over SSH. |
 
 ## Cost
 
@@ -73,15 +96,17 @@ The guide includes an optional auto-stop timer to shut down at midnight automati
 ```
 agent-deploy/
   docs/
-    agent-ec2-setup.md      # The full setup guide (start here)
+    agent-ec2-setup.md        # The full setup guide (start here)
   scripts/
-    _agent-env.sh            # Shared defaults + helpers (sourced by all scripts)
-    agent-ssh.sh             # SSH over mesh or bootstrap
-    agent-start.sh           # Start the instance
-    agent-stop.sh            # Stop the instance
-    agent-health.sh          # Remote health check
-    ...                      # See Scripts table above
-  agent-env.example.sh       # Template for your private config
+    _agent-env.sh              # Shared defaults + helpers (sourced by all scripts)
+    agent-setup.sh             # Interactive setup wizard
+    agent-ssh.sh               # SSH over mesh or bootstrap
+    agent-start.sh             # Start the instance
+    agent-stop.sh              # Stop the instance
+    agent-health.sh            # Remote health check
+    ...                        # See Scripts table above
+  agent-env.example.sh         # Template for your private config
+  justfile                     # Just recipes for all ops commands
   .gitignore
   LICENSE
   README.md
